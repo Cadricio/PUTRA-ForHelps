@@ -40,8 +40,7 @@ models = {
 m, c, r2 = models[v_index]["m"], models[v_index]["c"], models[v_index]["r2"]
 prediction = (val - c) / m
 
-# 5. Results Dashboard
-st.divider()
+# 5. Prediction Dashboard
 st.write(f"### 📊 Prediction for {f_index}")
 res1, res2, res3 = st.columns(3)
 
@@ -52,25 +51,21 @@ with res2:
     st.metric("Model Confidence (R²)", r2)
 
 with res3:
-    # Classification Logic (Thresholds adjusted per Index from your data)
+    # Classification Logic based on Site Baselines
     if f_index == "Shannon Index (H')":
-        if prediction >= 3.45: status, site, color = "PRISTINE", "Taman Negara Pahang (TNP)", "green"
-        elif 3.25 <= prediction < 3.45: status, site, color = "STABLE", "Sungai Tekala Recreational Forest (STF)", "orange"
-        else: status, site, color = "DISTURBED", "Taman Rimba Alam (TRA)", "red"
+        if prediction >= 3.45: status, site, color = "PRISTINE", "TNP", "green"
+        elif 3.25 <= prediction < 3.45: status, site, color = "STABLE", "STF", "orange"
+        else: status, site, color = "DISTURBED", "TRA", "red"
     elif f_index == "Species Richness (S)":
-        if prediction >= 65: status, site, color = "PRISTINE", "Taman Negara Pahang (TNP)", "green"
-        elif 50 <= prediction < 65: status, site, color = "STABLE", "Sungai Tekala Recreational Forest (STF)", "orange"
-        else: status, site, color = "DISTURBED", "Taman Rimba Alam (TRA)", "red"
+        if prediction >= 65: status, site, color = "PRISTINE", "TNP", "green"
+        elif 50 <= prediction < 65: status, site, color = "STABLE", "STF", "orange"
+        else: status, site, color = "DISTURBED", "TRA", "red"
     else:
-        status, site, color = "DATA ANALYSIS", "Multiple reference sites", "blue"
+        status, site, color = "CALCULATED", "See Baseline Below", "blue"
     
-    st.write("**Ecosystem Class:**")
     st.subheader(f":{color}[{status}]")
 
-# 6. Site Context Info
-st.info(f"**Baseline Match:** This result is characteristic of the ecological profile found at **{site}**.")
-
-# 7. Research Baselines
+# 6. Research Baselines
 st.markdown("### 📍 Research Site Reference Values")
 st.markdown("""
 | Study Site Name | Shannon (H') | Simpson (1-D) | Evenness (J') | Richness (S) |
@@ -82,7 +77,7 @@ st.markdown("""
 
 st.divider()
 
-# 8. Professional Remarks (Added at bottom)
+# 7. Professional Remarks (Added at bottom)
 st.write("**Made by:**")
 st.write("Luqman Nur Haqeem bin Noor Azuan (215506)")
 st.write("Agricultural and Biosystem Engineering (UPM)")
