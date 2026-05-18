@@ -1,88 +1,91 @@
 import streamlit as st
 
-# 1. Page Config
-st.set_page_config(page_title="Forest Health Dashboard", page_icon="🌳", layout="wide")
+# 1. Page Setup
+st.set_page_config(page_title="Forest Fungal Predictor", page_icon="🍄", layout="wide")
 
-# 2. UI Styling to remove clutter
+# 2. Styling
 st.markdown("""
     <style>
-    .reportview-container { background: #f5f7f9; }
-    .stNumberInput, .stSelectbox { border-radius: 10px; }
-    div.stButton > button:first-child { background-color: #2e7d32; color:white; }
+    .main { background-color: #f8f9fa; }
+    .stMetric { background-color: #ffffff; padding: 20px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    h1 { color: #2e7d32; }
     </style>
     """, unsafe_allow_index=True)
 
 # 3. Header
-st.title("🌲 Forest Health & Fungal Diversity Analyzer")
-st.markdown("### Biosystems Engineering Decision Support System")
+st.title("🌳 Forest Health & Fungal Diversity Predictor")
+st.markdown("##### Decision Support System based on Research by Luqman Nur Haqeem")
 st.divider()
 
-# 4. Input Zone (Organized in 2 columns)
-col_input1, col_input2 = st.columns(2)
+# 4. Inputs (Top Row)
+col_a, col_b = st.columns(2)
 
-with col_input1:
-    st.write("#### 1. Parameter Selection")
+with col_a:
     selected_index = st.selectbox(
-        "Choose Vegetation Index (VI)", 
+        "Select Vegetation Index (VI)", 
         ["NDRE", "CIRE", "NDVI", "VARI", "MSAVI", "SAVI", "GNDVI"]
     )
 
-with col_input2:
-    st.write("#### 2. Spectral Data Input")
-    # Using number_input instead of slider for unlimited range and precision
-    val = st.number_input(f"Enter {selected_index} value observed from Satellite/UAV", value=0.750, step=0.001, format="%.3f")
+with col_b:
+    # Wider range as requested
+    val = st.number_input(f"Enter {selected_index} Value", value=0.750, min_value=-100.0, max_value=100.0, step=0.001, format="%.3f")
 
 st.divider()
 
-# 5. Logic Engine
+# 5. Engineering Logic
 models = {
-    "NDRE": {"m": 0.0632, "c": 0.584, "r2": 0.990, "full": "Normalized Difference Red Edge"},
-    "CIRE": {"m": 1.1500, "c": 2.820, "r2": 0.918, "full": "Chlorophyll Index - Red Edge"},
-    "NDVI": {"m": 0.0347, "c": 0.818, "r2": 0.862, "full": "Normalized Difference Vegetation Index"},
-    "VARI": {"m": 0.0611, "c": 0.252, "r2": 0.847, "full": "Visible Resistant Index"},
-    "MSAVI": {"m": 0.0181, "c": 0.900, "r2": 0.674, "full": "Modified Soil-Adjusted Index"},
-    "SAVI": {"m": -0.0440, "c": 1.230, "r2": 0.616, "full": "Soil-Adjusted Index"},
-    "GNDVI": {"m": -0.0242, "c": 0.770, "r2": 0.333, "full": "Green-band Index"}
+    "NDRE": {"m": 0.0632, "c": 0.584, "r2": "99.0%"},
+    "CIRE": {"m": 1.1500, "c": 2.820, "r2": "91.8%"},
+    "NDVI": {"m": 0.0347, "c": 0.818, "r2": "86.2%"},
+    "VARI": {"m": 0.0611, "c": 0.252, "r2": "84.7%"},
+    "MSAVI": {"m": 0.0181, "c": 0.900, "r2": "67.4%"},
+    "SAVI": {"m": -0.0440, "c": 1.230, "r2": "61.6%"},
+    "GNDVI": {"m": -0.0242, "c": 0.770, "r2": "33.3%"}
 }
 
-m, c, r2, full_name = models[selected_index]["m"], models[selected_index]["c"], models[selected_index]["r2"], models[selected_index]["full"]
+m = models[selected_index]["m"]
+c = models[selected_index]["c"]
+r2 = models[selected_index]["r2"]
+
+# The Prediction Calculation: x = (y - c) / m
 prediction = (val - c) / m
 
-# 6. Results Zone (Three clean cards)
+# 6. Results Row
 res1, res2, res3 = st.columns(3)
 
 with res1:
-    st.metric(label="Predicted Shannon Index (H')", value=f"{prediction:.3f}")
-    st.caption(f"Calculated via {selected_index} Regression")
-
+    st.metric("Predicted Shannon Index (H')", f"{prediction:.3f}")
 with res2:
-    st.metric(label="Model Reliability (R²)", value=f"{r2:.1%}")
-    st.caption("Statistical Confidence")
-
+    st.metric("Model Confidence (R²)", r2)
 with res3:
     if prediction >= 3.45:
-        status, color = "High Diversity", "green"
-        site = "Taman Negara Pahang (TNP)"
+        label, site, color = "PRISTINE", "Taman Negara Pahang (TNP)", "green"
     elif 3.25 <= prediction < 3.45:
-        status, color = "Moderate Diversity", "orange"
-        site = "Sungai Tekala Recreational Forest (STF)"
+        label, site, color = "STABLE", "Sungai Tekala Recreational Forest (STF)", "orange"
     else:
-        status, color = "Low Diversity", "red"
-        site = "Taman Rimba Alam (TRA)"
+        label, site, color = "DISTURBED", "Taman Rimba Alam (TRA)", "red"
     
-    st.markdown(f"**Ecosystem Class:**")
-    st.subheader(f":{color}[{status}]")
+    st.write("**Ecosystem Status:**")
+    st.subheader(f":{color}[{label}]")
 
-# 7. Interpretation & Study Sites
+# 7. Site Interpretation Box
 st.markdown("---")
-st.write("#### 3. Ecological Interpretation")
 if color == "green":
-    st.success(f"**Primary Forest Condition:** The result aligns with **{site}**. Suggests a stable climax community with high fungal richness.")
+    st.success(f"**Condition Assessment:** High health levels detected. Profile matches **{site}**.")
 elif color == "orange":
-    st.warning(f"**Recreational/Secondary Forest:** Matches **{site}**. Indicators suggest moderate ecological health with some human interference.")
+    st.warning(f"**Condition Assessment:** Moderate health levels detected. Profile matches **{site}**.")
 else:
-    st.error(f"**Urban/Disturbed Condition:** Result aligns with **{site}**. Spectral markers indicate fragmentation and reduced microbial biodiversity.")
+    st.error(f"**Condition Assessment:** Low health/High stress detected. Profile matches **{site}**.")
 
-# 8. Footer
+# 8. Comparison Table (Manual HTML to avoid Pandas errors)
+st.markdown("### 📍 Study Site Baselines")
+st.markdown(f"""
+| Site Name | Category | Average H' Value |
+| :--- | :--- | :--- |
+| **Taman Negara Pahang (TNP)** | Primary Forest | 3.483 |
+| **Sungai Tekala Recreational Forest (STF)** | Recreational Forest | 3.389 |
+| **Taman Rimba Alam (TRA)** | Urban Forest | 3.123 |
+""", unsafe_allow_html=True)
+
 st.divider()
-st.caption(f"Researcher: Luqman Nur Haqeem | Thesis Reference: UAV Multispectral Biodiversity Assessment | Logic: H' = (VI - {c}) / {m}")
+st.caption(f"Logic: Linear Regression | Calculation: ({val} - {c}) / {m}")
