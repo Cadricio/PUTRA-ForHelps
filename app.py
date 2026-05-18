@@ -51,18 +51,33 @@ with res2:
     st.metric("Model Confidence (R²)", r2)
 
 with res3:
-    # Classification Logic based on Site Baselines
+    # 1. Logic for Shannon Index
     if f_index == "Shannon Index (H')":
         if prediction >= 3.45: status, site, color = "PRISTINE", "TNP", "green"
         elif 3.25 <= prediction < 3.45: status, site, color = "STABLE", "STF", "orange"
         else: status, site, color = "DISTURBED", "TRA", "red"
+        
+    # 2. Logic for Species Richness
     elif f_index == "Species Richness (S)":
         if prediction >= 65: status, site, color = "PRISTINE", "TNP", "green"
         elif 50 <= prediction < 65: status, site, color = "STABLE", "STF", "orange"
         else: status, site, color = "DISTURBED", "TRA", "red"
-    else:
-        status, site, color = "CALCULATED", "See Baseline Below", "blue"
+
+    # 3. Logic for Simpson Index (1-D)
+    elif f_index == "Simpson Index (1-D)":
+        if prediction >= 0.954: status, site, color = "PRISTINE", "TNP", "green"
+        elif 0.945 <= prediction < 0.954: status, site, color = "STABLE", "STF", "orange"
+        else: status, site, color = "DISTURBED", "TRA", "red"
+
+    # 4. Logic for Pielou's Evenness (J')
+    elif f_index == "Pielou's Evenness (J')":
+        # Note: In your data, TNP (0.804) is actually lower than STF (0.849)
+        # We classify based on your site profiles
+        if 0.800 <= prediction < 0.810: status, site, color = "PRISTINE", "TNP", "green"
+        elif prediction >= 0.840: status, site, color = "STABLE", "STF", "orange"
+        else: status, site, color = "DISTURBED", "TRA", "red"
     
+    st.write("**Ecosystem Class:**")
     st.subheader(f":{color}[{status}]")
 
 # 6. Research Baselines
