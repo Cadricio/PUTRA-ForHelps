@@ -57,17 +57,13 @@ with res3:
     }
     status = min(diffs, key=diffs.get)
     
-    # Corrected color logic strings
-    if "PRISTINE" in status:
-        color = "green"
-    elif "STABLE" in status:
-        color = "orange"
-    else:
-        color = "red"
-        
-    st.write("**Ecosystem Class:**")
-    st.subheader(f":{color}[{status}]")
-
+    # Use st.metric for "Ecosystem Class" to ensure perfect vertical alignment
+    st.metric("Ecosystem Class", status)
+    
+    # Optional: Keep a small colored indicator below it
+    color = "green" if "PRISTINE" in status else "orange" if "STABLE" in status else "red"
+    st.markdown(f"Status Level: :{color}[● {status.split(' ')[0]}]")
+    
 # 6. Reference Table
 st.markdown("### 📍 Research Baseline Reference Table")
 st.markdown(f"""
