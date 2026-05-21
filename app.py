@@ -14,14 +14,15 @@ with c1:
 with c2:
     v_index = st.selectbox("2. Select Vegetation Index (VI)", ["NDRE", "CIRE", "NDVI", "VARI", "MSAVI", "SAVI", "GNDVI"])
 with c3:
-    val = st.number_input(f"3. Enter {v_index} Value", value=0.750, format="%.3f")
+    val = st.number_input(f"3. Enter observed {v_index} Value", value=0.750, format="%.3f")
 
-# 3. Engineering Data
+# 3. Engineering Data (Standardized coefficients from your PDF)
 models = {
     "NDRE": [0.0632, 0.584], "CIRE": [1.15, 2.82], "NDVI": [0.0347, 0.818],
     "VARI": [0.0611, 0.252], "MSAVI": [0.0181, 0.9], "SAVI": [0.044, 1.23], "GNDVI": [0.0242, 0.77]
 }
 
+# Reference Baselines for Classification Logic
 thresholds = {
     "Shannon Index (H')": {"Pristine": 3.483, "Stable": 3.389, "Disturbed": 3.123},
     "Species Richness (S)": {"Pristine": 76.0, "Stable": 54.0, "Disturbed": 45.0},
@@ -31,15 +32,15 @@ thresholds = {
 
 # 4. Calculation
 m, c = models[v_index]
-# Standard Formula: y = mx + c -> x = (y - c) / m
+# Algebra: y = mx + c  =>  x = (y - c) / m
 prediction = (val - c) / m
 
 # 5. Dashboard Results
 st.divider()
-st.write(f"### 📊 Prediction for {f_target}")
+st.write(f"### 📊 Prediction Results")
 
-# NEW: Display the Dynamic Equation
-st.info(f"**Regression Model used:** $y = {m}x + {c}$  (where $y$ is {v_index} and $x$ is {f_target})")
+# Display Dynamic Regression Equation
+st.info(f"**Current Regression Model:** $y = {m}x + {c}$  \n*(where $y$ = {v_index} and $x$ = {f_target})*")
 
 res1, res2, res3 = st.columns(3)
 
@@ -51,6 +52,7 @@ with res2:
     st.metric("Model Confidence (R²)", r2_map[v_index])
 
 with res3:
+    # Nearest Neighbor Logic for Health Classification
     t = thresholds[f_target]
     diffs = {
         "PRISTINE (TNP)": abs(prediction - t["Pristine"]),
@@ -58,12 +60,4 @@ with res3:
         "DISTURBED (TRA)": abs(prediction - t["Disturbed"])
     }
     status = min(diffs, key=diffs.get)
-    color = "green" if "PRISTINE" in status else "orange" if "STABLE" in status else "red"
-    st.write("**Ecosystem Class:**")
-    st.subheader(f":{color}[{status}]")
-
-# 6. Footer
-st.divider()
-st.write("**Made by:**")
-st.write("Luqman Nur Haqeem bin Noor Azuan (215506)")
-st.caption("Agricultural and Biosystem Engineering (UPM)")
+    color = "
