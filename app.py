@@ -16,13 +16,12 @@ with c2:
 with c3:
     val = st.number_input(f"3. Enter observed {v_index} Value", value=0.750, format="%.3f")
 
-# 3. Engineering Data (Standardized coefficients from your PDF)
+# 3. Engineering Data
 models = {
     "NDRE": [0.0632, 0.584], "CIRE": [1.15, 2.82], "NDVI": [0.0347, 0.818],
     "VARI": [0.0611, 0.252], "MSAVI": [0.0181, 0.9], "SAVI": [0.044, 1.23], "GNDVI": [0.0242, 0.77]
 }
 
-# Reference Baselines for Classification Logic
 thresholds = {
     "Shannon Index (H')": {"Pristine": 3.483, "Stable": 3.389, "Disturbed": 3.123},
     "Species Richness (S)": {"Pristine": 76.0, "Stable": 54.0, "Disturbed": 45.0},
@@ -32,14 +31,12 @@ thresholds = {
 
 # 4. Calculation
 m, c = models[v_index]
-# Algebra: y = mx + c  =>  x = (y - c) / m
 prediction = (val - c) / m
 
 # 5. Dashboard Results
 st.divider()
 st.write(f"### 📊 Prediction Results")
 
-# Display Dynamic Regression Equation
 st.info(f"**Current Regression Model:** $y = {m}x + {c}$  \n*(where $y$ = {v_index} and $x$ = {f_target})*")
 
 res1, res2, res3 = st.columns(3)
@@ -52,7 +49,6 @@ with res2:
     st.metric("Model Confidence (R²)", r2_map[v_index])
 
 with res3:
-    # Nearest Neighbor Logic for Health Classification
     t = thresholds[f_target]
     diffs = {
         "PRISTINE (TNP)": abs(prediction - t["Pristine"]),
@@ -60,4 +56,30 @@ with res3:
         "DISTURBED (TRA)": abs(prediction - t["Disturbed"])
     }
     status = min(diffs, key=diffs.get)
-    color = "
+    
+    # Corrected color logic strings
+    if "PRISTINE" in status:
+        color = "green"
+    elif "STABLE" in status:
+        color = "orange"
+    else:
+        color = "red"
+        
+    st.write("**Ecosystem Class:**")
+    st.subheader(f":{color}[{status}]")
+
+# 6. Reference Table
+st.markdown("### 📍 Research Baseline Reference Table")
+st.markdown(f"""
+| Study Site Name | Shannon (H') | Species Richness (S) | Simpson (1-D) | Pielou's Evenness (J') |
+| :--- | :---: | :---: | :---: | :---: |
+| **Taman Negara Pahang (TNP)** | {thresholds["Shannon Index (H')"]["Pristine"]} | {thresholds["Species Richness (S)"]["Pristine"]} | {thresholds["Simpson Index (1-D)"]["Pristine"]} | {thresholds["Pielou's Evenness (J')"]["Pristine"]} |
+| **Sungai Tekala (STF)** | {thresholds["Shannon Index (H')"]["Stable"]} | {thresholds["Species Richness (S)"]["Stable"]} | {thresholds["Simpson Index (1-D)"]["Stable"]} | {thresholds["Pielou's Evenness (J')"]["Stable"]} |
+| **Taman Rimba Alam (TRA)** | {thresholds["Shannon Index (H')"]["Disturbed"]} | {thresholds["Species Richness (S)"]["Disturbed"]} | {thresholds["Simpson Index (1-D)"]["Disturbed"]} | {thresholds["Pielou's Evenness (J')"]["Disturbed"]} |
+""", unsafe_allow_html=True)
+
+# 7. Professional Remarks
+st.divider()
+st.write("**System Developed By:**")
+st.write("Luqman Nur Haqeem bin Noor Azuan (215506)")
+st.write("Agricultural and Biosystems Engineering, Universiti Putra Malaysia (UPM)")
