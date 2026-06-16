@@ -27,8 +27,21 @@ uploaded_file = st.file_uploader("Upload PlanetScope Multispectral TIFF", type=[
 if uploaded_file:
     with rasterio.open(uploaded_file) as src:
         data = src.read()  # Reads [Bands, Height, Width]
-        # Create a displayable image (using first 3 bands as RGB)
-        display_img = Image.fromarray(np.moveaxis(data[:3, :, :], 0, -1).astype(np.uint8))
+        # 1. Take only the first 3 bands (RGB)
+        rgb = data[:3, :, :]
+        
+        # 2. Normalize data to 0-255 range for display to avoid TypeError
+        rgb_norm = np.zeros(rgb.shape, dtype=np.uint8)
+        for i in range(3):
+            band = rgb[i, :, :]
+            # Normalize each band based on its min/max values
+            if band.max() - band.min() > 0:
+                rgb_norm[i, :, :] = 255 * (band - band.min()) / (band.max() - band.min())
+            else:
+                rgb_norm[i, :, :] = band
+        
+        # 3. Transpose to [Height, Width, Bands] for PIL and convert
+        display_img = Image.fromarray(np.moveaxis(rgb_norm, 0, -1))
     
     st.write("### Select a pixel on the forest to analyze:")
     coordinates = streamlit_image_coordinates(display_img)
