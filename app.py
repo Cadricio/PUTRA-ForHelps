@@ -59,3 +59,30 @@ if uploaded_file:
             # VARI formula: (G - R) / (G + R - B)
             vi = (b_green - b_red) / (b_green + b_red - b_blue + 1e-8)
             st.metric("Calculated VARI Value", round(vi, 3))
+
+# Define regression coefficients (m, c) for the four indices
+# Structure: {IndexName: {VI_Name: {"m": value, "c": value}}}
+# Replace these placeholder values with the exact constants from your thesis data
+fungal_models = {
+    "Shannon": {"VARI": {"m": 0.0611, "c": 0.252}, "NDRE": {"m": 0.0632, "c": 0.584}},
+    "Richness": {"VARI": {"m": 0.05, "c": 0.2}, "NDRE": {"m": 0.04, "c": 0.1}}, # Update with real thesis values
+    "Simpson": {"VARI": {"m": 0.07, "c": 0.3}, "NDRE": {"m": 0.06, "c": 0.4}},  # Update with real thesis values
+    "Evenness": {"VARI": {"m": 0.03, "c": 0.1}, "NDRE": {"m": 0.02, "c": 0.05}}  # Update with real thesis values
+}
+
+# In your coordinates block:
+if coordinates:
+    # ... (calculate 'vi' value as you did before) ...
+    
+    selected_vi = "VARI" if num_bands < 5 else "NDRE" # Or based on user selection
+    
+    st.subheader("Predicted Fungal Diversity Indices")
+    
+    # Calculate and display all 4 indices
+    cols = st.columns(4)
+    for i, (name, models) in enumerate(fungal_models.items()):
+        if selected_vi in models:
+            m = models[selected_vi]["m"]
+            c = models[selected_vi]["c"]
+            prediction = (vi - c) / m
+            cols[i].metric(name, round(prediction, 3))
