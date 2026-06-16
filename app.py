@@ -55,9 +55,10 @@ if uploaded_file:
         
         # 3. Transpose to [Height, Width, Bands] for PIL and convert
         display_img = Image.fromarray(np.moveaxis(rgb_norm, 0, -1))
-    
-    st.write("### Select a pixel on the forest to analyze:")
-    coordinates = streamlit_image_coordinates(display_img)
+       
+    if coordinates: # Line 58
+        x, y = coordinates["x"], coordinates["y"] # Line 59
+        st.write(f"**Coordinates:** x={x}, y={y}") # Line 60
 
     if coordinates:
         x, y = coordinates["x"], coordinates["y"]
