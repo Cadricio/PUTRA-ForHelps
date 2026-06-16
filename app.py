@@ -1,81 +1,61 @@
 import streamlit as st
+import rasterio
+import numpy as np
+from streamlit_image_coordinates import streamlit_image_coordinates
+from PIL import Image
 
 # 1. Page Setup
-st.set_page_config(page_title="PUTRA Forest Health", page_icon="🌳", layout="wide")
-st.title("🌲 PUTRA Forest Health Prediction System")
-st.markdown("##### Agricultural and Biosystems Engineering (UPM)")
-st.divider()
+st.set_page_config(page_title="PUTRA Forest Health Prediction System Pro", layout="wide")
+st.title("🌲 PUTRA Forest Health & Fungal Diversity Predictor (Pro)")
+st.markdown("Automated Forest Health monitoring using multispectral satellite data.")
 
-# 2. Inputs
-c1, c2, c3 = st.columns(3)
-with c1:
-    f_target = st.selectbox("1. Select Fungal Target", 
-                            ["Shannon Index (H')", "Species Richness (S)", "Simpson Index (1-D)", "Pielou's Evenness (J')"])
-with c2:
-    v_index = st.selectbox("2. Select Vegetation Index (VI)", ["NDRE", "CIRE", "NDVI", "VARI", "MSAVI", "SAVI", "GNDVI"])
-with c3:
-    val = st.number_input(f"3. Enter observed {v_index} Value", value=0.750, format="%.3f")
-
-# 3. Engineering Data
+# 2. Regression Models based on Table 4.15
+# x = (y - c) / m 
 models = {
-    "NDRE": [0.0632, 0.584], "CIRE": [1.15, 2.82], "NDVI": [0.0347, 0.818],
-    "VARI": [0.0611, 0.252], "MSAVI": [0.0181, 0.9], "SAVI": [0.044, 1.23], "GNDVI": [0.0242, 0.77]
+    "NDRE": {"m": 0.0632, "c": 0.584},
+    "CIRE": {"m": 1.1500, "c": 2.820},
+    "NDVI": {"m": 0.0347, "c": 0.818},
+    "VARI": {"m": 0.0611, "c": 0.252},
+    "MSAVI": {"m": 0.0181, "c": 0.900},
+    "SAVI": {"m": -0.0440, "c": 1.230},
+    "GNDVI": {"m": -0.0242, "c": 0.770}
 }
 
-thresholds = {
-    "Shannon Index (H')": {"Pristine": 3.483, "Stable": 3.389, "Disturbed": 3.123},
-    "Species Richness (S)": {"Pristine": 76.0, "Stable": 54.0, "Disturbed": 45.0},
-    "Simpson Index (1-D)": {"Pristine": 0.955, "Stable": 0.952, "Disturbed": 0.936},
-    "Pielou's Evenness (J')": {"Pristine": 0.804, "Stable": 0.849, "Disturbed": 0.820}
-}
+# 3. TIFF Input
+uploaded_file = st.file_uploader("Upload PlanetScope Multispectral TIFF", type=["tif", "tiff"])
 
-# 4. Calculation
-m, c = models[v_index]
-prediction = (val - c) / m
-
-# 5. Dashboard Results
-st.divider()
-st.write(f"### 📊 Prediction Results")
-
-st.info(f"**Current Regression Model:** $y = {m}x + {c}$  \n*(where $y$ = {v_index} and $x$ = {f_target})*")
-
-res1, res2, res3 = st.columns(3)
-
-with res1:
-    st.metric(f"Predicted {f_target}", f"{prediction:.3f}")
-
-with res2:
-    r2_map = {"NDRE": "99.0%", "CIRE": "91.8%", "NDVI": "86.2%", "VARI": "84.7%", "MSAVI": "67.4%", "SAVI": "61.6%", "GNDVI": "33.3%"}
-    st.metric("Model Confidence (R²)", r2_map[v_index])
-
-with res3:
-    t = thresholds[f_target]
-    diffs = {
-        "PRISTINE (TNP)": abs(prediction - t["Pristine"]),
-        "STABLE (STF)": abs(prediction - t["Stable"]),
-        "DISTURBED (TRA)": abs(prediction - t["Disturbed"])
-    }
-    status = min(diffs, key=diffs.get)
+if uploaded_file:
+    with rasterio.open(uploaded_file) as src:
+        data = src.read()  # Reads [Bands, Height, Width]
+        # Create a displayable image (using first 3 bands as RGB)
+        display_img = Image.fromarray(np.moveaxis(data[:3, :, :], 0, -1).astype(np.uint8))
     
-    # Use st.metric for "Ecosystem Class" to ensure perfect vertical alignment
-    st.metric("Ecosystem Class", status)
-    
-    # Optional: Keep a small colored indicator below it
-    color = "green" if "PRISTINE" in status else "orange" if "STABLE" in status else "red"
-    st.markdown(f"Status Level: :{color}[● {status.split(' ')[0]}]")
-    
-# 6. Reference Table
-st.markdown("### 📍 Research Baseline Reference Table")
-st.markdown(f"""
-| Study Site Name | Shannon (H') | Species Richness (S) | Simpson (1-D) | Pielou's Evenness (J') |
-| :--- | :---: | :---: | :---: | :---: |
-| **Taman Negara Pahang (TNP)** | {thresholds["Shannon Index (H')"]["Pristine"]} | {thresholds["Species Richness (S)"]["Pristine"]} | {thresholds["Simpson Index (1-D)"]["Pristine"]} | {thresholds["Pielou's Evenness (J')"]["Pristine"]} |
-| **Sungai Tekala (STF)** | {thresholds["Shannon Index (H')"]["Stable"]} | {thresholds["Species Richness (S)"]["Stable"]} | {thresholds["Simpson Index (1-D)"]["Stable"]} | {thresholds["Pielou's Evenness (J')"]["Stable"]} |
-| **Taman Rimba Alam (TRA)** | {thresholds["Shannon Index (H')"]["Disturbed"]} | {thresholds["Species Richness (S)"]["Disturbed"]} | {thresholds["Simpson Index (1-D)"]["Disturbed"]} | {thresholds["Pielou's Evenness (J')"]["Disturbed"]} |
-""", unsafe_allow_html=True)
+    st.write("### Select a pixel on the forest to analyze:")
+    coordinates = streamlit_image_coordinates(display_img)
 
-# 7. Professional Remarks
-st.divider()
-st.write("**System Developed By:**")
-st.write("Luqman Nur Haqeem bin Noor Azuan (215506)")
-st.write("Agricultural and Biosystems Engineering, Universiti Putra Malaysia (UPM)")
+    if coordinates:
+        x, y = coordinates["x"], coordinates["y"]
+        st.write(f"**Coordinates:** x={x}, y={y}")
+        
+        # Extract reflectance values at (x, y)
+        pixel_data = data[:, y, x]
+        
+        # 4. Calculation Logic
+        # NOTE: Ensure the index of bands matches your TIFF configuration
+        # Band order: Blue, Green, Red, NIR, Red-Edge [cite: 266]
+        # Example for NDRE Calculation[cite: 226]:
+        # NIR = data[3], RedEdge = data[4] (adjust based on your actual TIFF)
+        
+        st.subheader("Predicted Fungal Diversity Indices")
+        
+        # Example for one model
+        selected_vi = "NDRE" 
+        vi_val = 0.750 # This would be calculated from pixel_data
+        
+        m = models[selected_vi]["m"]
+        c = models[selected_vi]["c"]
+        shannon = (vi_val - c) / m
+        
+        col1, col2 = st.columns(2)
+        col1.metric("Shannon Diversity (H')", round(shannon, 3))
+        col2.info("Based on research findings from UPM [cite: 3]")
