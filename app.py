@@ -7,7 +7,8 @@ from PIL import Image
 st.set_page_config(page_title="PUTRA ForHelps Pro", layout="wide")
 st.title("🌲 PUTRA Forest Health & Fungal Diversity Predictor")
 
-# Replace these with your actual thesis constants (y = mx + c)
+# Thesis Regression Constants (y = mx + c)
+# Inverse formula to predict diversity (x): x = (y - c) / m
 fungal_models = {
     "Shannon": {"m": 0.0632, "c": 0.584},
     "Richness": {"m": 0.0510, "c": 0.320},
@@ -22,7 +23,7 @@ if uploaded_file:
         data = src.read()
         num_bands = data.shape[0]
 
-        # Contrast-stretched display logic
+        # Robust contrast-stretched display logic
         rgb_display = np.zeros((data.shape[1], data.shape[2], 3), dtype=np.uint8)
         display_bands = min(num_bands, 3)
         for i in range(display_bands):
@@ -44,13 +45,15 @@ if uploaded_file:
         if coords:
             x, y = coords["x"], coords["y"]
             
-            # Auto-select VI based on bands
+            # Auto-select index logic
             if num_bands >= 5:
+                # Assuming PlanetScope: B, G, R, NIR, RE (indices 0, 1, 2, 3, 4)
                 vi = (data[3, y, x] - data[2, y, x]) / (data[3, y, x] + data[2, y, x] + 1e-8)
-                st.write(f"Detected Multispectral (NDVI): {round(float(vi), 3)}")
+                st.info(f"Multispectral mode (NDVI): {round(float(vi), 3)}")
             else:
+                # Fallback to VARI for 3-band RGB
                 vi = (data[1, y, x] - data[2, y, x]) / (data[1, y, x] + data[2, y, x] - data[0, y, x] + 1e-8)
-                st.write(f"Detected RGB (VARI): {round(float(vi), 3)}")
+                st.info(f"RGB mode (VARI): {round(float(vi), 3)}")
 
             # Calculate and display metrics
             metrics = st.columns(2)
@@ -58,4 +61,4 @@ if uploaded_file:
                 pred = (vi - coeffs["c"]) / coeffs["m"]
                 metrics[i % 2].metric(name, round(float(pred), 3))
         else:
-            st.info("Click on the image to generate fungal diversity indices.")
+            st.info("Click on a forest point to generate metrics.")
