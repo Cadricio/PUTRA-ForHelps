@@ -8,7 +8,6 @@ st.set_page_config(page_title="PUTRA ForHelps Pro", layout="wide")
 st.title("🌲 PUTRA Forest Health & Fungal Diversity Predictor")
 
 # Thesis Regression Constants (y = mx + c)
-# Inverse formula to predict diversity (x): x = (y - c) / m
 fungal_models = {
     "Shannon": {"m": 0.0632, "c": 0.584},
     "Richness": {"m": 0.0510, "c": 0.320},
@@ -43,17 +42,21 @@ if uploaded_file:
     with col2:
         st.subheader("Analysis Results")
         if coords:
-            x, y = coords["x"], coords["y"]
+            # FIX: Scale coordinates to prevent IndexError
+            img_width, img_height = display_img.size
+            data_h, data_w = data.shape[1], data.shape[2]
+            
+            x = int(coords["x"] * (data_w / img_width))
+            y = int(coords["y"] * (data_h / img_height))
+            x, y = min(max(x, 0), data_w - 1), min(max(y, 0), data_h - 1)
             
             # Auto-select index logic
             if num_bands >= 5:
-                # Assuming PlanetScope: B, G, R, NIR, RE (indices 0, 1, 2, 3, 4)
                 vi = (data[3, y, x] - data[2, y, x]) / (data[3, y, x] + data[2, y, x] + 1e-8)
-                st.info(f"Multispectral mode (NDVI): {round(float(vi), 3)}")
+                st.info(f"Multispectral (NDVI): {round(float(vi), 3)}")
             else:
-                # Fallback to VARI for 3-band RGB
                 vi = (data[1, y, x] - data[2, y, x]) / (data[1, y, x] + data[2, y, x] - data[0, y, x] + 1e-8)
-                st.info(f"RGB mode (VARI): {round(float(vi), 3)}")
+                st.info(f"RGB (VARI): {round(float(vi), 3)}")
 
             # Calculate and display metrics
             metrics = st.columns(2)
