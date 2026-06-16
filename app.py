@@ -15,7 +15,7 @@ fungal_models = {
     "Evenness": {"m": 0.0425, "c": 0.150}
 }
 
-uploaded_file = st.file_uploader("Upload PlanetScope TIFF", type=["tif", "tiff"])
+uploaded_file = st.file_uploader("Upload a TIFF image", type=["tif", "tiff"])
 
 if uploaded_file:
     with rasterio.open(uploaded_file) as src:
