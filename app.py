@@ -25,13 +25,26 @@ models = {
 uploaded_file = st.file_uploader("Upload PlanetScope Multispectral TIFF", type=["tif", "tiff"])
 
 if uploaded_file:
-    with rasterio.open(uploaded_file) as src:
+   with rasterio.open(uploaded_file) as src:
         data = src.read()  # Reads [Bands, Height, Width]
-        # 1. Take only the first 3 bands (RGB)
-        rgb = data[:3, :, :]
         
-        # 2. Normalize data to 0-255 range for display to avoid TypeError
-        rgb_norm = np.zeros(rgb.shape, dtype=np.uint8)
+        # Determine how many bands we can actually use (up to 3)
+        num_bands = min(data.shape[0], 3)
+        rgb = data[:num_bands, :, :]
+        
+        # Create a blank canvas (H, W, 3) to ensure we always have 3 channels for RGB
+        rgb_display = np.zeros((rgb.shape[1], rgb.shape[2], 3), dtype=np.uint8)
+        
+        for i in range(num_bands):
+            band = rgb[i, :, :]
+            # Normalize to 0-255
+            if band.max() - band.min() > 0:
+                norm_band = 255 * (band - band.min()) / (band.max() - band.min())
+            else:
+                norm_band = band
+            rgb_display[:, :, i] = norm_band.astype(np.uint8)
+        
+        display_img = Image.fromarray(rgb_display)
         for i in range(3):
             band = rgb[i, :, :]
             # Normalize each band based on its min/max values
